@@ -1,6 +1,7 @@
 // src/config.ts
 
-export const TARGET_URL = "https://example.com";
+export const BASE_URL = "https://example.com";
+export const SCHEME = "mysite";
 
 export const injectedJavaScript = `
   (function() {

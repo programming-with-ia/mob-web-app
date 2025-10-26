@@ -5,25 +5,31 @@ import {
   ActivityIndicator,
   RefreshControl,
   BackHandler,
+  Linking,
 } from 'react-native';
 import WebView from 'react-native-webview';
-import { WebViewSource, WebViewErrorEvent, WebViewNavigation } from 'react-native-webview/lib/WebViewTypes';
+import {
+  WebViewSource,
+  WebViewErrorEvent,
+  WebViewNavigation,
+  WebViewRequest,
+} from 'react-native-webview/lib/WebViewTypes';
 
-import { TARGET_URL, injectedJavaScript } from '../config';
+import { BASE_URL, injectedJavaScript } from '../config';
 import ErrorScreen from './ErrorScreen';
 
 interface BrowserProps {
-  // Add any props you need for this component
+  initialUrl: string;
 }
 
-const Browser: React.FC<BrowserProps> = () => {
+const Browser: React.FC<BrowserProps> = ({ initialUrl }) => {
   const webViewRef = useRef<WebView>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<WebViewErrorEvent['nativeEvent'] | null>(null);
   const [canGoBack, setCanGoBack] = useState(false);
 
-  const source: WebViewSource = { uri: TARGET_URL };
+  const source: WebViewSource = { uri: initialUrl };
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -42,6 +48,17 @@ const Browser: React.FC<BrowserProps> = () => {
 
   const handleNavigationStateChange = (navState: WebViewNavigation) => {
     setCanGoBack(navState.canGoBack);
+  };
+
+  const onShouldStartLoadWithRequest = (request: WebViewRequest) => {
+    // Only allow navigation to the base URL
+    if (request.url.startsWith(BASE_URL)) {
+      return true;
+    }
+
+    // Open all other links in the default browser
+    Linking.openURL(request.url);
+    return false;
   };
 
   // Android back button handling
@@ -82,6 +99,7 @@ const Browser: React.FC<BrowserProps> = () => {
         onLoad={() => setIsLoading(false)}
         onError={handleError}
         onNavigationStateChange={handleNavigationStateChange}
+        onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
         style={styles.webview}
         refreshControl={
           <RefreshControl
